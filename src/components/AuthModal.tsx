@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
+};
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { login, register } = useAuth();
