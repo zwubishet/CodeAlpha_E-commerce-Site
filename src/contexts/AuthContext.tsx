@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -28,19 +29,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+ useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Verify token and get user info
-      fetch('http://localhost:3001/api/auth/verify', {
+      axios.get('http://localhost:3001/api/auth/verify', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.user) {
-            setUser(data.user);
+        .then(response => {
+          if (response.data.user) {
+            setUser(response.data.user);
           }
         })
         .catch(() => {
@@ -50,47 +49,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(false);
         });
     } else {
-      setLoading(false);
+      setLoading(false); // Fix: It should set loading to false when no token is found.
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/login', {
-      method: 'POST',
+const login = async (email: string, password: string) => {
+  try {
+    const response = await axios.post('http://localhost:3001/api/auth/login', {
+      email,
+      password
+    }, {
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
+      }
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
-    }
+    const data = response.data;
 
-    const data = await response.json();
     localStorage.setItem('token', data.token);
     setUser(data.user);
-  };
+  } catch (error) {
+    console.error('Login failed:', error);
+    throw new Error('Login failed');
+  }
+};
 
-  const register = async (email: string, password: string, name: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/register', {
-      method: 'POST',
+const register = async (email: string, password: string, name: string) => {
+  try {
+    const response = await axios.post('http://localhost:3001/api/auth/register', {
+      email,
+      password,
+      name
+    }, {
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, name }),
+      }
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
-    }
+    const data = response.data;
 
-    const data = await response.json();
     localStorage.setItem('token', data.token);
     setUser(data.user);
-  };
+  } catch (error) {
+    console.error('Registration failed:', error);
+    throw new Error('Registration failed');
+  }
+};
+
 
   const logout = () => {
     localStorage.removeItem('token');

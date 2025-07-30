@@ -239,6 +239,61 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/payment', async (req, res) => {
+    const { amount, email, phone } = req.body;
+
+    try {
+        const response = await axios.post(
+            'https://api.chapa.co/api/v1/transaction/initialize',
+            {
+                amount,
+                email,
+                phone,
+                // Add more parameters like currency, return_url, etc.
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer <YOUR_API_KEY>`, // Use your Chapa secret key
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        res.json(response.data);  // Send Chapa's response back to the frontend
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Payment initialization failed' });
+    }
+});
+
+
+app.post('/api/payment/verify', async (req, res) => {
+    const { transaction_id } = req.body;
+
+    try {
+        const response = await axios.get(
+            `https://api.chapa.co/api/v1/transaction/verify/${transaction_id}`,
+            {
+                headers: {
+                    'Authorization': `Bearer <YOUR_API_KEY>`,
+                }
+            }
+        );
+
+        const { status } = response.data;
+        if (status === 'success') {
+            // Handle successful payment (e.g., update order status, send confirmation)
+            res.json({ message: 'Payment successful' });
+        } else {
+            res.json({ message: 'Payment failed' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Payment verification failed' });
+    }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

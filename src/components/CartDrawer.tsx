@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import PaymentForm from './PaymentComponent'; // Import your payment form
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -11,6 +12,9 @@ interface CartDrawerProps {
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const { items, removeItem, updateQuantity, total, clearCart } = useCart();
   const { user } = useAuth();
+  
+  // State to show the payment form
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   const handleCheckout = async () => {
     if (!user) {
@@ -35,9 +39,9 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       });
 
       if (response.ok) {
-        clearCart();
-        onClose();
-        alert('Order placed successfully!');
+        clearCart(); // Clear the cart after a successful order
+        // onClose(); // Close the cart drawer
+        setShowPaymentForm(true); // Show the payment form
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to place order');
@@ -101,6 +105,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       </h3>
                       <p className="text-sm text-gray-600">${item.price}</p>
                       
+
                       <div className="flex items-center space-x-2 mt-2">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -137,7 +142,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           </div>
           
           {/* Footer */}
-          {items.length > 0 && (
+          {items.length > 0 && !showPaymentForm && (
             <div className="border-t p-4 space-y-4">
               <div className="flex justify-between items-center text-lg font-semibold">
                 <span>Total:</span>
@@ -158,6 +163,13 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
               >
                 Clear Cart
               </button>
+            </div>
+          )}
+          
+          {/* Render the PaymentForm when checkout is complete */}
+          {showPaymentForm && (
+            <div className="p-4">
+              <PaymentForm />
             </div>
           )}
         </div>
